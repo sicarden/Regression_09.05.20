@@ -1,0 +1,67 @@
+# Add additional packages you need
+#install.packages("dplyr")
+#install.packages("here")
+#install.packages("contrib.url")
+#install.packages("flextable")
+#install.packages("zip")
+#library(zip)
+#library(flextable)
+library(tidyverse)
+library(dplyr)
+library(here)
+library(readxl)
+
+# Read in the data
+happy_combined <- read_sav(here("data_files", "happy_combined.sav"))
+print(happy_combined)
+
+# I used these functions to get a sense of the number of countries (i.e., factors) and the number of participants in each country. 
+summary(happy_combined)
+
+# Run regression using lm()
+# left hand side of ~ is outcome; right hand side contains predictors
+# salary ~ (beta_0) * 1 + (beta_1) * pub + (beta_2) * citation
+# remove beta_0, beta_1 and beta_2 to get the formula
+m1 <- lm(salary ~ 1 + pub + citation, data = salary_dat)
+
+# In R, the output is not printed out if it is saved to an object (e.g., m1). 
+# Summary:
+summary(m1)
+
+#Name: gm_GNP = Grand-mean centered Gross National Product(rescaled by 1/10,000)
+#Level: Defined at level L2
+sd(happy_combined$gm_GNP)
+
+# Summarize your regression coefficients in a table. 
+modelsummary::msummary(m1)
+
+# Insert code for plotting the slope. You can use the 
+# `sjPlot::plot_model(..., show.data = TRUE)` function.
+sjPlot::plot_model(m1, type = "pred", show.data = TRUE, 
+                   title = "")
+
+# Center variables
+mean_pub <- mean(salary_dat$pub)
+mean_pub
+mean_citation <- mean(salary_dat$citation)
+mean_citation
+salary_dat <- mutate(salary_dat, 
+                     pub_c = pub - mean(pub))
+salary_dat <- mutate(salary_dat, 
+                     citation_c = citation - mean(citation))
+
+# Interaction plot
+# Include interaction in lm()
+# install.packages("interactions")
+library(interactions)
+interactions::interact_plot(m2,
+                            pred = "pub_c",
+                            modx = "citation_c",
+                            # Insert specific values to plot the slopes. 
+                            # Pay attention that `time_c` has been centered
+                            modx.values = c(1, 40, 80) - 40.23, 
+                            modx.labels = c(1, 40, 80), 
+                            plot.points = TRUE, 
+                            x.label = "Number of publications (mean-centered)", 
+                            y.label = "Salary", 
+                            legend.main = "Number of citations (mean-centered)")
